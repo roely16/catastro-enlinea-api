@@ -86,6 +86,7 @@ $router->post('/matriculas_contribuyente', 'ContribuyenteController@obtener_matr
 $router->post('/adjuntar_archivos_solicitud', 'SolicitudController@adjuntar_archivos');
 
 // Obtener el interlocutor de una matricula
+$router->post('/matricula_interlocutor', 'ContribuyenteController@matricula_interlocutor');
 
 // Obtener los servicios disponibles para validación
 $router->post('/servicios_validacion', 'ServicioController@servicios_validacion');
@@ -95,3 +96,27 @@ $router->post('/validar_documento', 'ServicioController@validar_documento');
 
 // Registrar el documento emitido
 $router->post('/registrar_documento', 'ServicioController@registrar_documento');
+
+// Obtener los datos personales del contribuyente 
+$router->post('/datos_personales', 'ContribuyenteController@datos_personales');
+
+// Actualizar el perfil del contribuyente
+$router->post('/actualizar_perfil', 'ContribuyenteController@actualizar_perfil');
+
+// Obtener las matrículas asociadas a una cuenta
+$router->post('/matriculas_registradas', 'ContribuyenteController@matriculas_registradas');
+
+// Obtener los roles registrados a una cuenta
+$router->post('/roles_registrados', 'ContribuyenteController@roles_registrados');
+
+// Ingresar una solicitud para una nueva matrícula
+$router->post('/ingresar_solicitud', 'ContribuyenteController@ingresar_solicitud');
+
+// Ingresar solicitud para un nuevo rol 
+$router->post('/ingresar_solicitud_rol', 'ContribuyenteController@ingresar_solicitud_rol');
+
+// Solicitar roles faltantes de un contribuyente
+$router->post('/roles_faltantes', 'ContribuyenteController@roles_faltantes');
+
+// Cambiar el estado de la solicitud de asignación de nuevo rol
+$router->post('/cambiar_estado_rol', 'SolicitudController@cambiar_estado_rol');
