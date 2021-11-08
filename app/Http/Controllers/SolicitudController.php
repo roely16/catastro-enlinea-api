@@ -80,10 +80,14 @@
                                                         T2.TELEFONO,
                                                         T2.DIRECCION,
                                                         T1.ESTATUS AS ESTADO, 
-                                                        T1.USUARIO_OPERA AS USUARIO
+                                                        T1.USUARIO_OPERA AS USUARIO,
+                                                        T3.NOMBRE AS TIPO_SOLICITUD,
+                                                        T3.COLOR AS COLOR_TIPO
                                                     FROM CATASTRO.SERV_SOLICITUD_USUARIO T1
                                                     INNER JOIN CATASTRO.SERV_USUARIO T2
                                                     ON T1.USUARIO_ID = T2.ID
+                                                    INNER JOIN CATASTRO.SERV_TIPO_SOLICITUD T3
+                                                    ON T1.TIPO_SOLICITUD_ID = T3.ID
                                                     WHERE T1.ESTATUS = '$estado'
                                                     ORDER BY T1.ID DESC");
 
@@ -127,50 +131,21 @@
                                                         T2.TELEFONO,
                                                         T2.DIRECCION,
                                                         T1.ESTATUS AS ESTADO, 
-                                                        T1.USUARIO_OPERA AS USUARIO
+                                                        T1.USUARIO_OPERA AS USUARIO,
+                                                        T1.TIPO_SOLICITUD_ID,
+                                                        T3.NOMBRE AS TIPO_SOLICITUD,
+                                                        T3.COLOR AS COLOR_TIPO
                                                     FROM CATASTRO.SERV_SOLICITUD_USUARIO T1
                                                     INNER JOIN CATASTRO.SERV_USUARIO T2
                                                     ON T1.USUARIO_ID = T2.ID
+                                                    INNER JOIN CATASTRO.SERV_TIPO_SOLICITUD T3
+                                                    ON T1.TIPO_SOLICITUD_ID = T3.ID
                                                     WHERE T1.ESTATUS = '$estado'
                                                     AND T1.USUARIO_OPERA = '$empleado->usuario'
+                                                    -- AND T1.TIPO_SOLICITUD_ID = 1
                                                     ORDER BY T1.ID DESC");
 
             }
-
-            
-
-            // $result = app('db')->select("   SELECT 
-            //                                     COUNT(*) AS TOTAL
-            //                                 FROM CATASTRO.SERV_SOLICITUD_USUARIO T1
-            //                                 INNER JOIN CATASTRO.SERV_USUARIO T2
-            //                                 ON T1.USUARIO_ID = T2.ID
-            //                                 WHERE T1.ESTATUS = 'A'");
-
-            // $aceptadas = $result ? $result[0]->total : 0;
-
-            // $result = app('db')->select("   SELECT 
-            //                                     COUNT(*) AS TOTAL
-            //                                 FROM CATASTRO.SERV_SOLICITUD_USUARIO T1
-            //                                 INNER JOIN CATASTRO.SERV_USUARIO T2
-            //                                 ON T1.USUARIO_ID = T2.ID
-            //                                 WHERE T1.ESTATUS = 'R'");
-
-            // $rechazadas = $result ? $result[0]->total : 0;
-
-            // $solicitudes = app('db')->select("  SELECT 
-            //                                         T1.ID,
-            //                                         TO_CHAR(T1.CREATED_AT, 'DD/MM/YYYY HH24:MI:SS') AS CREATED_AT,
-            //                                         CONCAT(T2.NOMBRES, CONCAT(' ', T2.APELLIDOS)) AS SOLICITANTE,
-            //                                         T2.EMAIL,
-            //                                         T2.TELEFONO,
-            //                                         T2.DIRECCION,
-            //                                         T1.ESTATUS AS ESTADO, 
-            //                                         T1.USUARIO_OPERA AS USUARIO
-            //                                     FROM CATASTRO.SERV_SOLICITUD_USUARIO T1
-            //                                     INNER JOIN CATASTRO.SERV_USUARIO T2
-            //                                     ON T1.USUARIO_ID = T2.ID
-            //                                     WHERE T1.ESTATUS = '$estado'
-            //                                     ORDER BY T1.ID DESC");
 
             foreach ($solicitudes as &$solicitud) {
                 
@@ -214,19 +189,13 @@
                 [
                     "text" => "Solicitante",
                     "value" => "solicitante",
-                    "width" => "20%",
+                    "width" => "30%",
                     "sortable" => false
                 ],
                 [
-                    "text" => "Email",
-                    "value" => "email",
-                    "width" => "15%",
-                    "sortable" => false
-                ],
-                [
-                    "text" => "Usuario",
-                    "value" => "usuario",
-                    "width" => "10%"
+                    "text" => "Tipo",
+                    "value" => "tipo_solicitud",
+                    "width" => "20%"
                 ],
                 [
                     "text" => "Estado",
@@ -267,11 +236,20 @@
 
             $usuario->adjuntos = count($adjuntos);
 
-            $tipo_usuario = TipoUsuario::find($usuario->tipo_usuario_id);
+            // Buscar las solicitudes de matrícula del usuario
+            $solicitudes_matricula = SolicitudUsuario::where('usuario_id', $usuario->id)->whereIn('tipo_solicitud_id', [1,2])->get();
 
-            $usuario->tipo = $tipo_usuario->nombre;
+            $id_solicitudes = [];
 
-            $matriculas = MatriculaSolicitud::where('solicitud_id', $solicitud->id)->get();
+            foreach ($solicitudes_matricula as $solicitud_) {
+                
+                $id_solicitudes [] = $solicitud_->id;
+
+            }
+
+            array_unshift($id_solicitudes, $request->id);
+
+            $matriculas = MatriculaSolicitud::whereIn('solicitud_id', $id_solicitudes)->orderBy('id', 'desc')->get();
 
             $historial = app('db')->select("    SELECT 
                                                     ID,
@@ -280,22 +258,30 @@
                                                     SOLICITUD_ID,
                                                     TO_CHAR(CREATED_AT, 'DD/MM/YYYY HH24:MI:SS') AS CREATED_AT
                                                 FROM CATASTRO.SERV_HISTORIAL_SOLICITUD
-                                                WHERE SOLICITUD_ID = '$solicitud->id'
+                                                WHERE SOLICITUD_ID IN (
+                                                    SELECT 
+                                                        ID
+                                                    FROM CATASTRO.SERV_SOLICITUD_USUARIO
+                                                    WHERE USUARIO_ID = $usuario->id
+                                                )
                                                 ORDER BY ID DESC");
 
-            // Campos especiales 
-
-            $campos_especiales = app('db')->select("   SELECT CAMPO, ETIQUETA
-                                            FROM CATASTRO.SERV_TIPO_USER_CAMPO_ESP
-                                            WHERE TIPO_USUARIO_ID = $usuario->tipo_usuario_id");
-
+            // Roles del usuario
+            $roles = app('db')->select("SELECT 
+                                            T1.*, 
+                                            T2.NOMBRE
+                                        FROM CATASTRO.SERV_USUARIO_TIPO T1
+                                        INNER JOIN CATASTRO.SERV_TIPO_USUARIO T2
+                                        ON T1.TIPO_USUARIO_ID = T2.ID
+                                        WHERE T1.USUARIO_ID = $usuario->id
+                                        ORDER BY T1.UPDATED_AT DESC");
 
             $data = [
                 "solicitud" => $solicitud,
                 "usuario" => $usuario,
                 "matriculas" => $matriculas,
                 "historial" => $historial,
-                "campos_especiales" => $campos_especiales
+                "roles" => $roles,
             ];
 
             return response()->json($data);
@@ -325,6 +311,42 @@
 
             $matricula->estado = $request->estado;
             $matricula->save();
+
+            // Válidar si la solicitud es tipo 2 para enviar correo sobre el resultado de la solicitud
+
+            $solicitud = SolicitudUsuario::find($matricula->solicitud_id);
+
+            if ($solicitud->tipo_solicitud_id == 2) {
+                
+                $solicitud->estatus = $request->estado;
+                $solicitud->save();
+
+                $usuario = Usuario::find($solicitud->usuario_id);
+
+                // Enviar correo de confirmación
+
+                $mensaje_aprobacion = $request->estado == 'A' ? 'Aprobada' : 'Rechazada';
+
+                $comentario = 'Solicitud ';
+                $subject = $request->estado == 'A' ? ' Solicitud No. ' . $solicitud->id . ' APROBADA' : ' Solicitud No. ' . $solicitud->id .' RECHAZADA';
+                $body = "<p>Estimado(a): " . $usuario->nombres . " " . $usuario->apellidos . "</p>" .
+                        '<p>Su gestión para la habilitación de la matrícula No. ' .  $matricula->matricula . ' ha sido ' . $mensaje_aprobacion . '.</p>' . 
+                        '<p>Para acceder a los servicios en línea debera de dirigirse a la página <a href="udicat.muniguate.com/apps/catastro-enlinea-app/#/">www.muniguate.com</a> y acceder con las credenciales previamente registradas.</p>' .
+                        '<p>Atentamente, </p>' .
+                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>';
+
+                $datos_correo = [
+                    // Correo para el solicitante
+                    [
+                        "email" => $usuario->email,
+                        "body" =>   $body,
+                        "subject" => $subject 
+                    ],
+                ];
+    
+                \Queue::push(new MailJob($datos_correo));
+                
+            }
 
             // Registrar en el historial 
             $comentario = $request->estado == 'R' ? 'La Matricula ' . $matricula->matricula . ' a sido RECHAZADA' : 'La Matricula ' . $matricula->matricula . ' a sido ACEPTADA';
@@ -632,6 +654,74 @@
         }
 
         public function adjuntar_archivos(Request $request){
+
+            return response()->json($request);
+
+        }
+
+        public function cambiar_estado_rol(Request $request){
+
+            $empleado = app('db')->select(" SELECT 
+                                                USUARIO
+                                            FROM RH_EMPLEADOS
+                                            WHERE NIT = '$request->usuario_atiende'");
+
+            if ($empleado) {
+                $empleado = $empleado[0];
+            }else{
+                $empleado->usuario = null;
+            }
+
+            $solicitud = SolicitudUsuario::find($request->solicitud_id);
+
+            if ($solicitud->tipo_solicitud_id != 1) {
+                
+                $solicitud->estatus = $request->estado;
+                $solicitud->usuario_opera = $empleado->usuario;
+                $solicitud->save();
+
+            }
+
+            // Habilitar el rol
+            $result = app('db')->table('SERV_USUARIO_TIPO')->where('solicitud_id', $request->solicitud_id)->where('usuario_id', $request->usuario_id)->update([
+                'estatus' => $request->estado
+            ]);
+
+            $usuario = Usuario::find($request->usuario_id);
+
+            /* Notificar por correo si la solicitud es tipo 3 */
+            if ($solicitud->tipo_solicitud_id == 3) {
+                
+                $mensaje_aprobacion = $request->estado == 'A' ? 'Aprobada' : 'Rechazada';
+
+                $subject = $request->estado == 'A' ? ' Solicitud No. ' . $solicitud->id . ' APROBADA' : ' Solicitud No. ' . $solicitud->id .' RECHAZADA';
+                $body = "<p>Estimado(a): " . $usuario->nombres . " " . $usuario->apellidos . "</p>" .
+                        '<p>Su gestión para la habilitación de un nuevo rol No. ' .  $solicitud->id . ' ha sido ' . $mensaje_aprobacion . '.</p>' . 
+                        '<p>Para acceder a los servicios en línea debera de dirigirse a la página <a href="udicat.muniguate.com/apps/catastro-enlinea-app/#/">www.muniguate.com</a> y acceder con las credenciales previamente registradas.</p>' .
+                        '<p>Atentamente, </p>' .
+                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>';
+
+                $datos_correo = [
+                    // Correo para el solicitante
+                    [
+                        "email" => $usuario->email,
+                        "body" =>   $body,
+                        "subject" => $subject 
+                    ],
+                ];
+    
+                \Queue::push(new MailJob($datos_correo));
+
+            }
+
+            // Registrar en el historial 
+            $comentario = $request->estado == 'R' ? 'La solicitud de nuevo rol No. ' . $solicitud->id . ' a sido RECHAZADA' : 'La solicitud de nuevo rol No. ' . $solicitud->id . ' a sido ACEPTADA';
+
+            $historial = new HistorialSolicitud();
+            $historial->comentario = $comentario;
+            $historial->solicitud_id = $solicitud->id;
+            $historial->usuario_opera = $empleado->usuario;
+            $historial->save();
 
             return response()->json($request);
 

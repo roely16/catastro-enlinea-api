@@ -10,14 +10,6 @@
     use App\HistorialSolicitud;
     use App\ArchivoSolicitud;
 
-    // use PHPMailer\PHPMailer\PHPMailer;
-    // use PHPMailer\PHPMailer\SMTP;
-    // use PHPMailer\PHPMailer\Exception;
-
-    // require base_path() . '/vendor/phpmailer/phpmailer/src/PHPMailer.php';
-    // require base_path() . '/vendor/phpmailer/phpmailer/src/SMTP.php';
-    // require base_path() . '/vendor/phpmailer/phpmailer/src/Exception.php';
-
     require base_path() . '/vendor/PHPMailer_old/PHPMailerAutoload.php';
 
     use App\Jobs\MailJob;
@@ -32,7 +24,6 @@
          * @return void
          */
         public function __construct(){
-
             
         }
 
@@ -134,7 +125,7 @@
             $usuario->representacion_legal = $datos->representacion_legal;
             $usuario->carne_abogado = $datos->carne_abogado;
             $usuario->carne_valuador = $datos->carne_valuador;
-            $usuario->tipo_usuario_id = $request->tipo_usuario;
+            //$usuario->tipo_usuario_id = $request->tipo_usuario;
 
             $usuario->save();
 
@@ -143,6 +134,7 @@
             $solicitud = new SolicitudUsuario();
             $solicitud->usuario_id = $usuario->id;
             $solicitud->estatus = 'P';
+            $solicitud->tipo_solicitud_id = 1;
             $solicitud->save();
 
             // Registro de las matriculas, si las hubiere
@@ -156,6 +148,16 @@
                 $matricula_solicitud->save();
 
             }
+
+            // Registrar el rol del usuario
+            $result = app('db')->table('SERV_USUARIO_TIPO')->insert([
+                'usuario_id' => $usuario->id,
+                'tipo_usuario_id' => $request->tipo_usuario,
+                'estatus' => 'P',
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+                'solicitud_id' => $solicitud->id
+            ]);
 
             // Registrar en el historial de la solicitud
             $historial = new HistorialSolicitud();

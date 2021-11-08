@@ -86,4 +86,12 @@ $router->post('/matriculas_contribuyente', 'ContribuyenteController@obtener_matr
 $router->post('/adjuntar_archivos_solicitud', 'SolicitudController@adjuntar_archivos');
 
 // Obtener el interlocutor de una matricula
-$router->post('/matricula_interlocutor', 'ContribuyenteController@matricula_interlocutor');
+
+// Obtener los servicios disponibles para validación
+$router->post('/servicios_validacion', 'ServicioController@servicios_validacion');
+
+// Validar documento
+$router->post('/validar_documento', 'ServicioController@validar_documento');
+
+// Registrar el documento emitido
+$router->post('/registrar_documento', 'ServicioController@registrar_documento');
