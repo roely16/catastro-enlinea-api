@@ -173,9 +173,10 @@
                     "body" => '<p>Se ha generado una solicitud de creación de usuario.  Se procederá a verificar la información proporcionada para luego continuar con la activación del usuario solicitado.</p>',
                     "body" =>   '<p>Estimado(a): ' . $usuario->nombres . ' ' . $usuario->apellidos . '</p>' .
                                 '<p>Su gestión para la habilitación de usuario para acceder a los servicios catastrales en línea ha sido ingresada exitosamente.</p>' . 
-                                '<p>Cuando su gestión haya sido aprobada se le estará notificando por esta misma vía</p>' .
+                                '<p>Cuando su gestión haya sido aprobada se le estará notificando por esta vía</p>' .
                                 '<p>Atentamente, </p>' .
                                 '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>',
+                                '<p><strong>Teléfono: 2285-8600 / 2285-8611</strong></p>',
                     "subject" => 'Solicitud de Creación de Usuario No. ' . $solicitud->id
                 ],
                 // Correo para el administrador

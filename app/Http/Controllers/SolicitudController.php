@@ -323,6 +323,16 @@
 
                 $usuario = Usuario::find($solicitud->usuario_id);
 
+                if($request->estado == 'A'){
+
+                    $matricula_usuario = new MatriculaUsuario();
+                    $matricula_usuario->matricula = $matricula->matricula;
+                    $matricula_usuario->usuario_id = $usuario->id;
+                    $matricula_usuario->solicitud_id = $solicitud->id;
+                    $matricula_usuario->save();
+    
+                }
+                
                 // Enviar correo de confirmación
 
                 $mensaje_aprobacion = $request->estado == 'A' ? 'Aprobada' : 'Rechazada';
@@ -331,9 +341,10 @@
                 $subject = $request->estado == 'A' ? ' Solicitud No. ' . $solicitud->id . ' APROBADA' : ' Solicitud No. ' . $solicitud->id .' RECHAZADA';
                 $body = "<p>Estimado(a): " . $usuario->nombres . " " . $usuario->apellidos . "</p>" .
                         '<p>Su gestión para la habilitación de la matrícula No. ' .  $matricula->matricula . ' ha sido ' . $mensaje_aprobacion . '.</p>' . 
-                        '<p>Para acceder a los servicios en línea debera de dirigirse a la página <a href="udicat.muniguate.com/apps/catastro-enlinea-app/#/">www.muniguate.com</a> y acceder con las credenciales previamente registradas.</p>' .
+                        '<p>Para acceder a los servicios en línea deberá de dirigirse a la página <a href="udicat.muniguate.com/apps/catastro-enlinea-app/#/">www.muniguate.com</a> y acceder con las credenciales previamente registradas.</p>' .
                         '<p>Atentamente, </p>' .
-                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>';
+                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>' .
+                        '<p><strong>Teléfono: 2285-8600 / 2285-8611</strong></p>';
 
                 $datos_correo = [
                     // Correo para el solicitante
@@ -349,7 +360,7 @@
             }
 
             // Registrar en el historial 
-            $comentario = $request->estado == 'R' ? 'La Matricula ' . $matricula->matricula . ' a sido RECHAZADA' : 'La Matricula ' . $matricula->matricula . ' a sido ACEPTADA';
+            $comentario = $request->estado == 'R' ? 'La Matricula ' . $matricula->matricula . ' ha sido RECHAZADA' : 'La Matricula ' . $matricula->matricula . ' ha sido ACEPTADA';
 
             $historial = new HistorialSolicitud();
             $historial->comentario = $comentario;
@@ -413,19 +424,21 @@
                 $comentario = 'Solicitud ACEPTADA';
                 $subject = 'Solicitud No. ' . $solicitud->id . ' ACEPTADA';
                 $body = "<p>Estimado(a): " . $usuario->nombres . " " . $usuario->apellidos . "</p>" .
-                        '<p>Su gestión para la habilitación de usuario para acceder a los servicios catastrales en línea a sido APROBADA.</p>' . 
-                        '<p>Para acceder a los servicios en línea debera de dirigirse a la página <a href="www.muniguate.com">www.muniguate.com</a> y acceder con las credenciales previamente registradas.</p>' .
+                        '<p>Su gestión para la habilitación de usuario para acceder a los servicios catastrales en línea ha sido APROBADA.</p>' . 
+                        '<p>Para acceder a los servicios en línea deberá de dirigirse a la página <a href="www.muniguate.com">www.muniguate.com</a> y acceder con las credenciales previamente registradas.</p>' .
                         '<p>Atentamente, </p>' .
-                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>';
+                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>' . 
+                        '<p><strong>Teléfono: 2285-8600 / 2285-8611</strong></p>';
 
             }else{
 
                 $comentario = 'Solicitud RECHAZADA';
                 $subject = 'Solicitud No. ' . $solicitud->id . ' RECHAZADA';
                 $body = "<p>Estimado(a): " . $usuario->nombres . " " . $usuario->apellidos . "</p>" .
-                        '<p>Su gestión para la habilitación de usuario para acceder a los servicios catastrales en línea a sido RECHAZADA.</p>' . 
+                        '<p>Su gestión para la habilitación de usuario para acceder a los servicios catastrales en línea ha sido RECHAZADA.</p>' . 
                         '<p>Atentamente, </p>' .
-                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>';
+                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>' . 
+                        '<p><strong>Teléfono: 2285-8600 / 2285-8611</strong></p>';
 
             }
             
@@ -571,7 +584,7 @@
             $response = [
                 "status" => 200,
                 "title" => "Excelente!",
-                "message" => "El correo electrónico a sido enviado exitosamente.",
+                "message" => "El correo electrónico ha sido enviado exitosamente.",
                 "icon" => "success"
             ];
 
@@ -605,7 +618,7 @@
             $response = [
                 "status" => 200,
                 "title" => "Excelente!",
-                "message" => "La solicitud a sido asignada exitosamente.",
+                "message" => "La solicitud ha sido asignada exitosamente.",
                 "icon" => "success"
             ];
 
@@ -697,9 +710,10 @@
                 $subject = $request->estado == 'A' ? ' Solicitud No. ' . $solicitud->id . ' APROBADA' : ' Solicitud No. ' . $solicitud->id .' RECHAZADA';
                 $body = "<p>Estimado(a): " . $usuario->nombres . " " . $usuario->apellidos . "</p>" .
                         '<p>Su gestión para la habilitación de un nuevo rol No. ' .  $solicitud->id . ' ha sido ' . $mensaje_aprobacion . '.</p>' . 
-                        '<p>Para acceder a los servicios en línea debera de dirigirse a la página <a href="udicat.muniguate.com/apps/catastro-enlinea-app/#/">www.muniguate.com</a> y acceder con las credenciales previamente registradas.</p>' .
+                        '<p>Para acceder a los servicios en línea deberá de dirigirse a la página <a href="udicat.muniguate.com/apps/catastro-enlinea-app/#/">www.muniguate.com</a> y acceder con las credenciales previamente registradas.</p>' .
                         '<p>Atentamente, </p>' .
-                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>';
+                        '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>' . 
+                        '<p><strong>Teléfono: 2285-8600 / 2285-8611</strong></p>';
 
                 $datos_correo = [
                     // Correo para el solicitante
@@ -715,7 +729,7 @@
             }
 
             // Registrar en el historial 
-            $comentario = $request->estado == 'R' ? 'La solicitud de nuevo rol No. ' . $solicitud->id . ' a sido RECHAZADA' : 'La solicitud de nuevo rol No. ' . $solicitud->id . ' a sido ACEPTADA';
+            $comentario = $request->estado == 'R' ? 'La solicitud de nuevo rol No. ' . $solicitud->id . ' ha sido RECHAZADA' : 'La solicitud de nuevo rol No. ' . $solicitud->id . ' ha sido ACEPTADA';
 
             $historial = new HistorialSolicitud();
             $historial->comentario = $comentario;

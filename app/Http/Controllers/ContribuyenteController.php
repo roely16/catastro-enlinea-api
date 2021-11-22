@@ -164,9 +164,10 @@
                     "email" => $usuario->email,
                     "body" =>   '<p>Estimado(a): ' . $usuario->nombres . ' ' . $usuario->apellidos . '</p>' .
                                 '<p>Su gestión para la habilitación de una nueva matrícula ha sido ingresada exitosamente.</p>' . 
-                                '<p>Cuando su gestión haya sido aprobada se le estará notificando por esta misma vía</p>' .
+                                '<p>Cuando su gestión haya sido aprobada se le estará notificando por esta vía</p>' .
                                 '<p>Atentamente, </p>' .
                                 '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>',
+                                '<p><strong>Teléfono: 2285-8600 / 2285-8611</strong></p>',
                     "subject" => 'Solicitud para agregar matrícula No. ' . $solicitud->id
                 ],
                 // Correo para el administrador
@@ -237,9 +238,10 @@
                     "email" => $usuario->email,
                     "body" =>   '<p>Estimado(a): ' . $usuario->nombres . ' ' . $usuario->apellidos . '</p>' .
                                 '<p>Su gestión para la habilitación de un nuevo rol ha sido ingresada exitosamente.</p>' . 
-                                '<p>Cuando su gestión haya sido aprobada se le estará notificando por esta misma vía</p>' .
+                                '<p>Cuando su gestión haya sido aprobada se le estará notificando por esta vía</p>' .
                                 '<p>Atentamente, </p>' .
                                 '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>',
+                                '<p><strong>Teléfono: 2285-8600 / 2285-8611</strong></p>',
                     "subject" => 'Solicitud para agregar matrícula No. ' . $solicitud->id
                 ],
                 // Correo para el administrador
