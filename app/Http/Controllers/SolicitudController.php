@@ -10,6 +10,7 @@
     use App\MatriculaUsuario;
     use App\HistorialSolicitud;
     use App\ArchivoSolicitud;
+    use App\MotivoRechazo;
 
     use App\Jobs\MailJob;
 
@@ -432,10 +433,15 @@
 
             }else{
 
-                $comentario = 'Solicitud RECHAZADA';
+                // Agregar el motivo del rechazo 
+
+                $motivo_rechazo = MotivoRechazo::find($request->motivo_rechazo);
+
+                $comentario = 'Solicitud RECHAZADA' . $motivo_rechazo ? ' - ' . $motivo_rechazo->nombre : null;
                 $subject = 'Solicitud No. ' . $solicitud->id . ' RECHAZADA';
                 $body = "<p>Estimado(a): " . $usuario->nombres . " " . $usuario->apellidos . "</p>" .
                         '<p>Su gestión para la habilitación de usuario para acceder a los servicios catastrales en línea ha sido RECHAZADA.</p>' . 
+                        '<p>Motivo: <strong>' . $motivo_rechazo ? $motivo_rechazo->nombre : null .'</strong></p>' .
                         '<p>Atentamente, </p>' .
                         '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>' . 
                         '<p><strong>Teléfono: 2285-8600 / 2285-8611</strong></p>';
