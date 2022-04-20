@@ -46,7 +46,8 @@
                 $result = app('db')->select("   SELECT ID, NOMBRES, APELLIDOS, EMAIL, ESTATUS
                                                 FROM CATASTRO.SERV_USUARIO
                                                 WHERE UPPER(EMAIL) = UPPER('$request->email')
-                                                AND PASSWORD = '$request->password'");
+                                                AND PASSWORD = '$request->password'
+                                                AND ESTATUS = 'A'");
 
                 if ($result) {
                     
