@@ -85,8 +85,11 @@
 
         public function registrar_solicitud(Request $request){
 
-            $datos = (object) $request->datos_formulario;
-            $matriculas = (object) $request->matriculas;
+            $tipo_usuario = json_decode($request->tipo_usuario);
+            $datos = json_decode($request->datos_formulario);
+            $matriculas = json_decode($request->matriculas);
+            $number_files = json_decode($request->number_files);
+            $number_attachments = json_decode($request->number_attachments);
 
              // Validar que no exista ya una solicitud de usuario o un usuario creado 
 
@@ -111,6 +114,19 @@
                 }
             }
 
+            // Validar que el número de archivos adjuntos concuerde con la cantidad solicitada
+            if ($number_files != $number_attachments) {
+                
+                $data = [
+                    "status" => 100,
+                    "message" => "Hacen falta archivos adjuntos.",
+                    "title" => "Error...",
+                    "icon" => "error"
+                ];
+
+            }
+
+
             // Creación del registro del usuario
 
             $usuario = new Usuario();
@@ -125,7 +141,6 @@
             $usuario->representacion_legal = $datos->representacion_legal;
             $usuario->carne_abogado = $datos->carne_abogado;
             $usuario->carne_valuador = $datos->carne_valuador;
-            //$usuario->tipo_usuario_id = $request->tipo_usuario;
 
             $usuario->save();
 
@@ -136,6 +151,26 @@
             $solicitud->estatus = 'P';
             $solicitud->tipo_solicitud_id = 1;
             $solicitud->save();
+
+            // Registrar los archivos adjuntos
+
+            for ($i = 1; $i <= $number_files; $i++) { 
+                
+                $nombre = $request->file('file' . $i)->getClientOriginalName();
+                $identificador = uniqid() . '.' . $request->file('file' . $i)->extension();
+
+                if($request->file('file' . $i)->move('archivos', $identificador)){
+                    
+                    /* Registrar en la base de datos */
+                    $archivo = new ArchivoSolicitud();
+                    $archivo->solicitud_id = $solicitud->id;
+                    $archivo->nombre = $nombre;
+                    $archivo->path = $identificador;
+                    $archivo->save();
+
+                }
+
+            }
 
             // Registro de las matriculas, si las hubiere
 
@@ -188,6 +223,7 @@
                 ]
             ];
 
+            
             \Queue::push(new MailJob($datos_correo));
 
             // Enviar correo de notificación
@@ -268,15 +304,6 @@
         public function test_mail(){
 
             $data = [];
-
-            // Mail::send('mail', $data, function($message){
-
-            //     $message->to('gerson.roely@gmail.com')->subject('Test Mail from Selva');
-            //     $message->from('app.monitoreofase2@gmail.com');
-
-            // });
-
-            
 
         }
         
