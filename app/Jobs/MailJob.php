@@ -56,7 +56,7 @@
                 $to = $mail_send->email;
 
                 $user = 'productoscatastrales';
-                $pass = "%dcai2015%";
+                $pass = '$dcai2015$';
                 $smtp_host = 'mail2.muniguate.com';
                 $smtp_port = 25;
                 $headers = "MIME-Version: 1.0\r\n";
