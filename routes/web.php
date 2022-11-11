@@ -132,3 +132,6 @@ $router->post('/consultar_matriculas', 'ProductosCatastrales\ProCasController@ob
 
 // Obtener las matriculas que tiene relacionadas el usuario
 $router->post('/validar_requisitos', 'ProductosCatastrales\ProCasController@validar_requisitos');
+
+//Grabar los datos cuando se finaliza el proceso
+$router->post('/finalizar_proceso','ProductosCatastrales\ProCasController@notificar_finalizado');
