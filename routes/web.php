@@ -120,3 +120,15 @@ $router->post('/roles_faltantes', 'ContribuyenteController@roles_faltantes');
 
 // Cambiar el estado de la solicitud de asignación de nuevo rol
 $router->post('/cambiar_estado_rol', 'SolicitudController@cambiar_estado_rol');
+
+
+//RUTAS GMARTINEZ 
+
+// Validar si existe el usuario en las tablas de catastro en linea para productos catastrales en linea
+$router->post('/consultar_existencia', 'ProductosCatastrales\ProCasController@login');
+
+// Obtener las matriculas que tiene relacionadas el usuario
+$router->post('/consultar_matriculas', 'ProductosCatastrales\ProCasController@obtener_matriculas');
+
+// Obtener las matriculas que tiene relacionadas el usuario
+$router->post('/validar_requisitos', 'ProductosCatastrales\ProCasController@validar_requisitos');
