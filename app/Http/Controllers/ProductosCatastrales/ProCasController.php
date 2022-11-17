@@ -60,6 +60,40 @@ class ProCasController extends Controller{
 
     }
 
+    public function obtener_opciones(){
+
+        try {
+            $opciones = app('db')->select(" SELECT  ID_OPCION,
+                                                    NOMBRE
+                                            FROM    CATASTRO.SERV_OPCIONES
+                                            WHERE   ACTIVO = 1");
+
+            if ($opciones){
+
+                $response = [
+                    "status" => 1,
+                    "opciones" => $opciones
+                ];
+
+            } else {
+                
+                $response = [
+                    "status" => 0,
+                    "opciones" => null
+                ];
+
+            }   
+
+            return response()->json($response);
+
+        } catch (\Throwable $th) {
+
+            return response()->json($th->getMessage());
+
+        }
+
+    }
+
     public function obtener_matriculas(Request $request){
 
         $matriculas = app('db')->select("   SELECT  MU.ID,
@@ -68,6 +102,8 @@ class ProCasController extends Controller{
                                                     CATASTRO.SERV_USUARIO US
                                             WHERE   MU.USUARIO_ID = US.ID
                                                     AND UPPER(US.EMAIL) = UPPER('$request->email')");
+
+
 
         if (count($matriculas) > 0){
             
@@ -94,6 +130,17 @@ class ProCasController extends Controller{
     }
 
     public function validar_requisitos(Request $request){
+
+        $matriculas = app('db')->select("   SELECT  MU.ID,
+                                                    MU.MATRICULA
+                                            FROM    CATASTRO.SERV_MATRICULA_USUARIO MU,
+                                                    CATASTRO.SERV_USUARIO US
+                                            WHERE   MU.USUARIO_ID = US.ID
+                                                    AND UPPER(US.EMAIL) = UPPER('$request->email')");
+        return $matriculas;
+        foreach ($matriculas as $matricula){
+            echo $matricula;
+        }
 
         $catastral = 'X';
         $nomenclatura = 'X';

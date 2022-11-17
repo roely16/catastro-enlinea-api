@@ -135,3 +135,6 @@ $router->post('/validar_requisitos', 'ProductosCatastrales\ProCasController@vali
 
 //Grabar los datos cuando se finaliza el proceso
 $router->post('/finalizar_proceso','ProductosCatastrales\ProCasController@notificar_finalizado');
+
+//Obtener las opciones de los diferentes productos que se ofrecen
+$router->get('/consultar_opciones','ProductosCatastrales\ProCasController@obtener_opciones');
