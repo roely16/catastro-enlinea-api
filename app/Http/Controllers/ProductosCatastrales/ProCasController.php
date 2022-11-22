@@ -5,6 +5,9 @@ namespace App\Http\Controllers\ProductosCatastrales;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
+use App\Recibo;
+use App\Usuario;
+
 require base_path() . '/vendor/PHPMailer_old/PHPMailerAutoload.php';
 
 use App\Jobs\MailJob;
@@ -18,7 +21,7 @@ class ProCasController extends Controller{
             
             $result = app('db')->select("   SELECT  COUNT(*) AS EXISTE
                                             FROM    CATASTRO.SERV_USUARIO
-                                            WHERE   UPPER(EMAIL) = UPPER('$request->email')
+                                            WHERE   US.DPI = '$request->dpi'
                                             AND     ESTATUS = 'A'");
 
             if ($result) {
@@ -101,7 +104,7 @@ class ProCasController extends Controller{
                                             FROM    CATASTRO.SERV_MATRICULA_USUARIO MU,
                                                     CATASTRO.SERV_USUARIO US
                                             WHERE   MU.USUARIO_ID = US.ID
-                                                    AND UPPER(US.EMAIL) = UPPER('$request->email')");
+                                                    AND US.DPI = '$request->dpi'");
 
 
 
@@ -136,95 +139,96 @@ class ProCasController extends Controller{
                                             FROM    CATASTRO.SERV_MATRICULA_USUARIO MU,
                                                     CATASTRO.SERV_USUARIO US
                                             WHERE   MU.USUARIO_ID = US.ID
-                                                    AND UPPER(US.EMAIL) = UPPER('$request->email')");
-        return $matriculas;
-        foreach ($matriculas as $matricula){
-            echo $matricula;
-        }
+                                                    AND US.DPI = '$request->dpi'");
 
-        $catastral = 'X';
-        $nomenclatura = 'X';
-        $saldo = 0.00;
-        $cumple = 'X';
+        foreach($matriculas as $matricula){
 
-        $result = app('db')->select("   SELECT  CASE 
-                                                    WHEN (NUMERO_MANZANA IS NULL) THEN 'N' ELSE 'S' 
-                                                END AS CATASTRADO,
-                                                CASE
-                                                    WHEN (DIRECCION_OFICIAL_PREDIO IS NULL) THEN 'N' ELSE 'S'
-                                                END AS NOMENCLATURA
-                                        FROM    MCA_INMUEBLES_ACTIVOS_VW
-                                        WHERE   MATRICULA = '$request->matricula'");
+            $catastral = 'X';
+            $nomenclatura = 'X';
+            $saldo = 0.00;
+            $cumple = 'X';
 
-        if ($result) {
+            $result = app('db')->select("   SELECT  CASE 
+                                                        WHEN (NUMERO_MANZANA IS NULL) THEN 'N' ELSE 'S' 
+                                                    END AS CATASTRADO,
+                                                    CASE
+                                                        WHEN (DIRECCION_OFICIAL_PREDIO IS NULL) THEN 'N' ELSE 'S'
+                                                    END AS NOMENCLATURA
+                                            FROM    MCA_INMUEBLES_ACTIVOS_VW
+                                            WHERE   MATRICULA = '$matricula->matricula'");
 
-            $catastral = $result[0]->catastrado;
-            $nomenclatura = $result[0]->nomenclatura;
+            if ($result) {
 
-        }
+                $catastral = $result[0]->catastrado;
+                $nomenclatura = $result[0]->nomenclatura;
 
-        $data = [
-            'NAME_FUNCTION'=>'ZIUSI_SALDOTRIMESTRE_RFC',
-            'PARAM' => [
-                ["IMPORT","IDENTIFICAR",$request->matricula],
-                ["IMPORT","DATE","20171231"],
-                ["EXPORT","IC"],
-                ["EXPORT","SALDO"],
-                ["EXPORT","ZONA"],
-                ["EXPORT","SUJETO"],
-                ["EXPORT","IC_ALTERNATIVO"],
-                ["EXPORT","TRIMESTRE"],
-                ["EXPORT","DIRECCION"],
-                ["EXPORT","NIT"],
-                ["EXPORT","IC_NAME"],
-                ["EXPORT","IC_DIRECCION"],
-                ["EXPORT","NO_REGISTRO"]
-            ]
-        ];
-    
-        $url = 'http://172.23.25.36/funciones-rfc/RFC_GLOBAL.php';
-    
-        $post = http_build_query([
-            'data' => $data,
-        ]);
-
-        $options = [
-            'http' => [
-                        'method' => 'POST',
-                        'header' => 'Content-type: application/x-www-form-urlencoded',
-                        'content' => $post
-                        ]
-        ];
-
-        $context = stream_context_create($options);
-        $result = file_get_contents($url, false, $context);
-
-        $saldo = json_decode($result,true)['SALDO'];
-
-        if ($request->opcion == 1){
-            if ($saldo < 0.01 && $catastral == 'S' && $nomenclatura == 'N'){
-                $cumple = 'S';
-            } else {
-                $cumple = 'N';
             }
-        }
 
-        if ($request->opcion == 2){
-            if ($saldo < 0.01 && $catastral == 'S' && $nomenclatura == 'S'){
-                $cumple = 'S';
-            } else {
-                $cumple = 'N';
+            $data = [
+                'NAME_FUNCTION'=>'ZIUSI_SALDOTRIMESTRE_RFC',
+                'PARAM' => [
+                    ["IMPORT","IDENTIFICAR",$matricula->matricula],
+                    ["IMPORT","DATE","20171231"],
+                    ["EXPORT","IC"],
+                    ["EXPORT","SALDO"],
+                    ["EXPORT","ZONA"],
+                    ["EXPORT","SUJETO"],
+                    ["EXPORT","IC_ALTERNATIVO"],
+                    ["EXPORT","TRIMESTRE"],
+                    ["EXPORT","DIRECCION"],
+                    ["EXPORT","NIT"],
+                    ["EXPORT","IC_NAME"],
+                    ["EXPORT","IC_DIRECCION"],
+                    ["EXPORT","NO_REGISTRO"]
+                ]
+            ];
+        
+            $url = 'http://172.23.25.36/funciones-rfc/RFC_GLOBAL.php';
+        
+            $post = http_build_query([
+                'data' => $data,
+            ]);
+
+            $options = [
+                'http' => [
+                            'method' => 'POST',
+                            'header' => 'Content-type: application/x-www-form-urlencoded',
+                            'content' => $post
+                            ]
+            ];
+
+            $context = stream_context_create($options);
+            $result = file_get_contents($url, false, $context);
+
+            $saldo = json_decode($result,true)['SALDO'];
+
+            if ($request->opcion == 1){
+                if ($saldo < 0.01 && $catastral == 'S' && $nomenclatura == 'N'){
+                    $cumple = 'S';
+                } else {
+                    $cumple = 'N';
+                }
             }
+
+            if ($request->opcion == 2){
+                if ($saldo < 0.01 && $catastral == 'S' && $nomenclatura == 'S'){
+                    $cumple = 'S';
+                } else {
+                    $cumple = 'N';
+                }
+            }
+
+            $resultado[] = [
+                "matricula" => $matricula->matricula,
+                "saldo" => $saldo,
+                "catastral" => $catastral,
+                "nomenclatura" => $nomenclatura,
+                "cumple_requisitos" => $cumple
+            ];
+
         }
 
-        $result = [
-            "saldo" => $saldo,
-            "catastral" => $catastral,
-            "nomenclatura" => $nomenclatura,
-            "cumple_requisitos" => $cumple
-        ];
-
-        return $result;
+        return $resultado;
 
     }
 
@@ -238,46 +242,52 @@ class ProCasController extends Controller{
             $producto = 'CERTIFICACION';
         }
 
-        $result = app('db')->select("   INSERT INTO CATASTRO.SERV_RECIBOS ( 
-                                                ID,
-                                                MATRICULA,
-                                                ID_SERVICIO,
-                                                NO_RECIBO,
-                                                USUARIO,
-                                                FECHA)
-                                        VALUES (
-                                                SQ_SERV_RECIBOS.NEXTVAL,
-                                                '$request->matricula',
-                                                $request->opcion,
-                                                '$request->recibo',
-                                                '$request->usuario',
-                                                SYSDATE
-                                                )");
-        if ($result) {
+        $recibo = new Recibo();
+        $recibo->matricula = $request->matricula;
+        $recibo->id_servicio = $request->opcion;
+        $recibo->no_recibo = $request->recibo;
+        $recibo->usuario = $request->dpi;
 
-            $datos_correo = [
-                [
-                    "solicitud" => $request->matricula,
-                    "email" => 'gmartinez@muniguate.com',
-                    "body" => '<p>Se ha generado una nueva solicitud de: ' . $producto . ' para la matricula: ' . $request->matricula . '</p><p>Por favor ingrese a la siguiente dirección para verificar la información</p><p> <a href="https://udicat.muniguate.com/apps/catastro-enlinea-app/#/admin">Ingresar</a> </p>',
-                    "subject" => 'Solicitud de ' . $producto . ' '
-                ]
-            ];
+        $recibo->save();
 
-            \Queue::push(new MailJob($datos_correo));
+        return $recibo;
 
-            $response = [
-                "status" => 1,
-                "message" => "Grabado"
-            ];
+        $datos_correo = [
+            [
+                "solicitud" => $request->matricula,
+                "email" => 'gmartinez@muniguate.com',
+                "body" => '<p>Se ha generado una nueva solicitud de: ' . $producto . ' para la matricula: ' . $request->matricula . '</p><p>Por favor ingrese a la siguiente dirección para verificar la información</p><p> <a href="https://udicat.muniguate.com/apps/catastro-enlinea-app/#/admin">Ingresar</a> </p>',
+                "subject" => 'Solicitud de ' . $producto . ' '
+            ]
+        ];
 
-            return response()->json($response);
-
-        }
+        \Queue::push(new MailJob($datos_correo));
 
         $response = [
-            "status" => 0,
-            "message" => "Error"
+            "status" => 1,
+            "message" => "Grabado"
+        ];
+
+        return response()->json($response);
+
+    }
+
+    public function ingresar_usuario(Request $request){
+
+        $usuario = new Usuario();
+        $usuario->nombres = $request->nombres;
+        $usuario->apellidos = $request->apellidos;
+        $usuario->sexo = $request->sexo;
+        $usuario->email = $request->email;
+        $usuario->direccion = $request->direccion;
+        $usuario->telefono = $request->telefono;
+        $usuario->dpi = $request->dpi;
+
+        $usuario->save();
+
+        $response = [
+            "status" => 1,
+            "message" => "Grabado"
         ];
 
         return response()->json($response);
