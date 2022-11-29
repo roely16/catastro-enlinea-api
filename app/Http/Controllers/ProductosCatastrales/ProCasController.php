@@ -66,8 +66,10 @@ class ProCasController extends Controller{
     public function obtener_opciones(){
 
         try {
+
             $opciones = app('db')->select(" SELECT  ID_OPCION,
-                                                    NOMBRE
+                                                    NOMBRE,
+                                                    ACTIVO
                                             FROM    CATASTRO.SERV_OPCIONES
                                             WHERE   ACTIVO = 1");
 
@@ -232,10 +234,12 @@ class ProCasController extends Controller{
             }
 
         } else {
+
             $resultado = [
                 "status" => 0,
                 "message" => "No tiene matriculas relacionadas"
             ];
+            
         }
 
 
