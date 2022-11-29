@@ -1,13 +1,15 @@
-<?php 
+<?php
 
     namespace App\Http\Controllers;
-            
+
     use Illuminate\Http\Request;
 
     use App\Usuario;
     use App\MatriculaUsuario;
     use App\SolicitudUsuario;
     use App\MatriculaSolicitud;
+    use Barryvdh\DomPDF\Facade\Pdf;
+
 
     require base_path() . '/vendor/PHPMailer_old/PHPMailerAutoload.php';
 
@@ -19,7 +21,7 @@
 
         public function obtener_matriculas(Request $request){
 
-            $matriculas = app('db')->select("   SELECT 
+            $matriculas = app('db')->select("   SELECT
                                                     ID,
                                                     MATRICULA
                                                 FROM CATASTRO.SERV_MATRICULA_USUARIO
@@ -63,7 +65,7 @@
         }
 
         public function actualizar_perfil(Request $request){
-            
+
             $usuario = Usuario::find($request->id);
 
             $usuario->nombres = $request->nombres;
@@ -72,7 +74,7 @@
             $usuario->email = $request->email;
             $usuario->direccion = $request->direccion;
             $usuario->telefono = $request->telefono;
-            
+
             $usuario->save();
 
             return response()->json($request);
@@ -81,7 +83,7 @@
 
         public function matriculas_registradas(Request $request){
 
-            $matriculas = app('db')->select("   SELECT 
+            $matriculas = app('db')->select("   SELECT
                                                     ID,
                                                     MATRICULA,
                                                     SOLICITUD_ID,
@@ -102,8 +104,8 @@
 
         public function roles_registrados(Request $request){
 
-            $roles = app('db')->select("SELECT 
-                                            T1.*, 
+            $roles = app('db')->select("SELECT
+                                            T1.*,
                                             T2.NOMBRE
                                         FROM CATASTRO.SERV_USUARIO_TIPO T1
                                         INNER JOIN CATASTRO.SERV_TIPO_USUARIO T2
@@ -111,7 +113,7 @@
                                         WHERE T1.USUARIO_ID = $request->usuario_id");
 
             foreach ($roles as &$rol) {
-                
+
                 $rol->estado = $rol->estatus === 'A' ? 'Aceptado' : $rol->estatus == 'P' ? 'Pendiente' : 'Rechazado';
 
                 $rol->color = $rol->estatus === 'A' ? 'success' : $rol->estatus == 'P' ? 'warning' : 'error';
@@ -122,7 +124,7 @@
             $roles_faltantes = app('db')->select("  SELECT *
                                                     FROM CATASTRO.SERV_TIPO_USUARIO
                                                     WHERE ID NOT IN (
-                                                        SELECT 
+                                                        SELECT
                                                             TIPO_USUARIO_ID
                                                         FROM CATASTRO.SERV_USUARIO_TIPO
                                                         WHERE USUARIO_ID = $request->usuario_id
@@ -149,7 +151,7 @@
             $solicitud->tipo_solicitud_id = 2;
             $solicitud->save();
 
-            // Registrar matrícula 
+            // Registrar matrícula
             $matricula = new MatriculaSolicitud();
             $matricula->matricula = $request->matricula;
             $matricula->estado = 'P';
@@ -163,7 +165,7 @@
                     "solicitud" => $solicitud->id,
                     "email" => $usuario->email,
                     "body" =>   '<p>Estimado(a): ' . $usuario->nombres . ' ' . $usuario->apellidos . '</p>' .
-                                '<p>Su gestión para la habilitación de una nueva matrícula ha sido ingresada exitosamente.</p>' . 
+                                '<p>Su gestión para la habilitación de una nueva matrícula ha sido ingresada exitosamente.</p>' .
                                 '<p>Cuando su gestión haya sido aprobada se le estará notificando por esta vía</p>' .
                                 '<p>Atentamente, </p>' .
                                 '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>',
@@ -209,8 +211,8 @@
                 "created_at" => date('Y-m-d H:i:s'),
                 "updated_at" => date('Y-m-d H:i:s'),
                 "solicitud_id" => $solicitud->id
-            ]);     
-            
+            ]);
+
             // Actualizar la información del usuario
             $usuario = Usuario::find($request->usuario_id);
 
@@ -237,7 +239,7 @@
                     "solicitud" => $solicitud->id,
                     "email" => $usuario->email,
                     "body" =>   '<p>Estimado(a): ' . $usuario->nombres . ' ' . $usuario->apellidos . '</p>' .
-                                '<p>Su gestión para la habilitación de un nuevo rol ha sido ingresada exitosamente.</p>' . 
+                                '<p>Su gestión para la habilitación de un nuevo rol ha sido ingresada exitosamente.</p>' .
                                 '<p>Cuando su gestión haya sido aprobada se le estará notificando por esta vía</p>' .
                                 '<p>Atentamente, </p>' .
                                 '<p><strong>Dirección de Catastro y Administración del IUSI</strong></p>',
@@ -257,6 +259,59 @@
 
             return response()->json($usuario);
 
+        }
+
+
+        public function estado_cuenta(Request $request){
+
+            $interlocutor = app('db')->select(" SELECT PREDIO
+                                                FROM CIERRES_IUSI_SAP.SALDOTRIMESTRE
+                                                WHERE MATRICULA = '$request->matricula'");
+            if(!$interlocutor){
+
+                $response = [
+                    "status" => 100,
+                    "message" => "No hay interlocutor asociado a la matricula ingresada"
+                ];
+
+                return response()->json($response);
+
+            }
+
+            $data = $this->obtenerDataRfc($interlocutor[0]->predio,2);
+
+            if(!isset($data['T_ECUENTA'])){
+
+                $response = [
+                    "status" => 100,
+                    "message" => "No hay datos vinculados a esta matricula."
+                ];
+
+                return response()->json($response);
+            }
+
+            $pdf = PDF::loadView('pdf',compact('data'))->setPaper('a4', 'landscape');
+                return $pdf->stream();
+        }
+
+        public function obtenerDataRfc($interlocutor_predio,$tipo){
+            $post = http_build_query([
+                'interlocutor_predio' => str_pad($interlocutor_predio,10,'0',STR_PAD_LEFT),
+                'tipo' => $tipo
+            ]);
+
+            $options = [
+                'http' => [
+                            'method' => 'POST',
+                            'header' => 'Content-type: application/x-www-form-urlencoded',
+                            'content' => $post
+                        ]
+            ];
+
+            $context = stream_context_create($options);
+            $result = file_get_contents('http://172.23.25.36/funciones-rfc-desarrollo/ZPSCD_ESTADO_CUENTAS.php', false, $context);
+
+            return json_decode($result,true);
         }
 
     }
