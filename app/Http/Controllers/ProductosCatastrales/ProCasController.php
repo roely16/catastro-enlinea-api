@@ -21,7 +21,7 @@ class ProCasController extends Controller{
             
             $result = app('db')->select("   SELECT  COUNT(*) AS EXISTE
                                             FROM    CATASTRO.SERV_USUARIO
-                                            WHERE   US.DPI = '$request->dpi'
+                                            WHERE   DPI = '$request->dpi'
                                             AND     ESTATUS = 'A'");
 
             if ($result) {
@@ -141,92 +141,103 @@ class ProCasController extends Controller{
                                             WHERE   MU.USUARIO_ID = US.ID
                                                     AND US.DPI = '$request->dpi'");
 
-        foreach($matriculas as $matricula){
+        if (count($matriculas) > 0){
 
-            $catastral = 'X';
-            $nomenclatura = 'X';
-            $saldo = 0.00;
-            $cumple = 'X';
+            foreach($matriculas as $matricula){
 
-            $result = app('db')->select("   SELECT  CASE 
-                                                        WHEN (NUMERO_MANZANA IS NULL) THEN 'N' ELSE 'S' 
-                                                    END AS CATASTRADO,
-                                                    CASE
-                                                        WHEN (DIRECCION_OFICIAL_PREDIO IS NULL) THEN 'N' ELSE 'S'
-                                                    END AS NOMENCLATURA
-                                            FROM    MCA_INMUEBLES_ACTIVOS_VW
-                                            WHERE   MATRICULA = '$matricula->matricula'");
+                $catastral = 'X';
+                $nomenclatura = 'X';
+                $saldo = 0.00;
+                $cumple = 'X';
 
-            if ($result) {
+                $result = app('db')->select("   SELECT  CASE 
+                                                            WHEN (NUMERO_MANZANA IS NULL) THEN 'N' ELSE 'S' 
+                                                        END AS CATASTRADO,
+                                                        CASE
+                                                            WHEN (DIRECCION_OFICIAL_PREDIO IS NULL) THEN 'N' ELSE 'S'
+                                                        END AS NOMENCLATURA
+                                                FROM    MCA_INMUEBLES_ACTIVOS_VW
+                                                WHERE   MATRICULA = '$matricula->matricula'");
 
-                $catastral = $result[0]->catastrado;
-                $nomenclatura = $result[0]->nomenclatura;
+                if ($result) {
 
-            }
+                    $catastral = $result[0]->catastrado;
+                    $nomenclatura = $result[0]->nomenclatura;
 
-            $data = [
-                'NAME_FUNCTION'=>'ZIUSI_SALDOTRIMESTRE_RFC',
-                'PARAM' => [
-                    ["IMPORT","IDENTIFICAR",$matricula->matricula],
-                    ["IMPORT","DATE","20171231"],
-                    ["EXPORT","IC"],
-                    ["EXPORT","SALDO"],
-                    ["EXPORT","ZONA"],
-                    ["EXPORT","SUJETO"],
-                    ["EXPORT","IC_ALTERNATIVO"],
-                    ["EXPORT","TRIMESTRE"],
-                    ["EXPORT","DIRECCION"],
-                    ["EXPORT","NIT"],
-                    ["EXPORT","IC_NAME"],
-                    ["EXPORT","IC_DIRECCION"],
-                    ["EXPORT","NO_REGISTRO"]
-                ]
-            ];
-        
-            $url = 'http://172.23.25.36/funciones-rfc/RFC_GLOBAL.php';
-        
-            $post = http_build_query([
-                'data' => $data,
-            ]);
-
-            $options = [
-                'http' => [
-                            'method' => 'POST',
-                            'header' => 'Content-type: application/x-www-form-urlencoded',
-                            'content' => $post
-                            ]
-            ];
-
-            $context = stream_context_create($options);
-            $result = file_get_contents($url, false, $context);
-
-            $saldo = json_decode($result,true)['SALDO'];
-
-            if ($request->opcion == 1){
-                if ($saldo < 0.01 && $catastral == 'S' && $nomenclatura == 'N'){
-                    $cumple = 'S';
-                } else {
-                    $cumple = 'N';
                 }
-            }
 
-            if ($request->opcion == 2){
-                if ($saldo < 0.01 && $catastral == 'S' && $nomenclatura == 'S'){
-                    $cumple = 'S';
-                } else {
-                    $cumple = 'N';
+                $data = [
+                    'NAME_FUNCTION'=>'ZIUSI_SALDOTRIMESTRE_RFC',
+                    'PARAM' => [
+                        ["IMPORT","IDENTIFICAR",$matricula->matricula],
+                        ["IMPORT","DATE","20171231"],
+                        ["EXPORT","IC"],
+                        ["EXPORT","SALDO"],
+                        ["EXPORT","ZONA"],
+                        ["EXPORT","SUJETO"],
+                        ["EXPORT","IC_ALTERNATIVO"],
+                        ["EXPORT","TRIMESTRE"],
+                        ["EXPORT","DIRECCION"],
+                        ["EXPORT","NIT"],
+                        ["EXPORT","IC_NAME"],
+                        ["EXPORT","IC_DIRECCION"],
+                        ["EXPORT","NO_REGISTRO"]
+                    ]
+                ];
+            
+                $url = 'http://172.23.25.36/funciones-rfc/RFC_GLOBAL.php';
+            
+                $post = http_build_query([
+                    'data' => $data,
+                ]);
+
+                $options = [
+                    'http' => [
+                                'method' => 'POST',
+                                'header' => 'Content-type: application/x-www-form-urlencoded',
+                                'content' => $post
+                                ]
+                ];
+
+                $context = stream_context_create($options);
+                $result = file_get_contents($url, false, $context);
+
+                $saldo = json_decode($result,true)['SALDO'];
+
+                if ($request->opcion == 1){
+                    if ($saldo < 0.01 && $catastral == 'S' && $nomenclatura == 'N'){
+                        $cumple = 'S';
+                    } else {
+                        $cumple = 'N';
+                    }
                 }
+
+                if ($request->opcion == 2){
+                    if ($saldo < 0.01 && $catastral == 'S' && $nomenclatura == 'S'){
+                        $cumple = 'S';
+                    } else {
+                        $cumple = 'N';
+                    }
+                }
+
+                $resultado[] = [
+                    "status" => 1,
+                    "matricula" => $matricula->matricula,
+                    "saldo" => $saldo,
+                    "catastral" => $catastral,
+                    "nomenclatura" => $nomenclatura,
+                    "cumple_requisitos" => $cumple
+                ];
+
             }
 
-            $resultado[] = [
-                "matricula" => $matricula->matricula,
-                "saldo" => $saldo,
-                "catastral" => $catastral,
-                "nomenclatura" => $nomenclatura,
-                "cumple_requisitos" => $cumple
+        } else {
+            $resultado = [
+                "status" => 0,
+                "message" => "No tiene matriculas relacionadas"
             ];
-
         }
+
 
         return $resultado;
 
@@ -274,21 +285,47 @@ class ProCasController extends Controller{
 
     public function ingresar_usuario(Request $request){
 
-        $usuario = new Usuario();
-        $usuario->nombres = $request->nombres;
-        $usuario->apellidos = $request->apellidos;
-        $usuario->sexo = $request->sexo;
-        $usuario->email = $request->email;
-        $usuario->direccion = $request->direccion;
-        $usuario->telefono = $request->telefono;
-        $usuario->dpi = $request->dpi;
+        $result = app('db')->select("   SELECT  COUNT(*) AS EXISTE
+                                        FROM    CATASTRO.SERV_USUARIO
+                                        WHERE   DPI = '$request->dpi'");
 
-        $usuario->save();
+        if ($result) {
+            
+            if ($result[0]->existe < 1) {
+                
+                $usuario = new Usuario();
+                $usuario->nombres = $request->nombres;
+                $usuario->apellidos = $request->apellidos;
+                $usuario->sexo = $request->sexo;
+                $usuario->email = $request->email;
+                $usuario->direccion = $request->direccion;
+                $usuario->telefono = $request->telefono;
+                $usuario->dpi = $request->dpi;
+                $usuario->password = '123456';
+                $usuario->save();
 
-        $response = [
-            "status" => 1,
-            "message" => "Grabado"
-        ];
+                $response = [
+                    "status" => 1,
+                    "message" => "Grabado"
+                ];
+
+            } else {
+
+                $response = [
+                    "status" => 2,
+                    "message" => "Ya existe"
+                ];    
+
+            }
+
+        } else {
+
+            $response = [
+                "status" => 2,
+                "message" => "Ya existe"
+            ];
+
+        }
 
         return response()->json($response);
 
