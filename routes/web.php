@@ -88,6 +88,9 @@ $router->post('/adjuntar_archivos_solicitud', 'SolicitudController@adjuntar_arch
 // Obtener el interlocutor de una matricula
 $router->post('/matricula_interlocutor', 'ContribuyenteController@matricula_interlocutor');
 
+// Genera el estado de cuenta de interlocutor predio
+$router->get('/estado_cuenta', 'ContribuyenteController@estado_cuenta');
+
 // Obtener los servicios disponibles para validación
 $router->post('/servicios_validacion', 'ServicioController@servicios_validacion');
 
